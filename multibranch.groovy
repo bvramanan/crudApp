@@ -13,16 +13,17 @@ node{
 	    }
 	    else{
 		    //git branch: env.TAG_NAME, url: '$github_url'
-	    	git 'https://github.com/sainathh/crudApp.git'
+	    	git '$github_url'
 	    	sh "git checkout tags/${tag}"
 	    }
 		
     }
      stage("build"){
-        def mavenHome = tool name: "Maven363", type: "maven"
-        def mavenCMD = "${mavenHome}/bin/mvn "
+        def mavenHome = tool name: "maven", type: "maven" 
+        def mavenCMD = "${mavenHome}/bin/mvn " 
         sh "${mavenCMD} clean package"
     }
+	//
     stage("deploy"){
         def pom = readMavenPom file: 'pom.xml'
         filesByGlob = findFiles(glob: "target/*.${pom.packaging}");
@@ -30,19 +31,19 @@ node{
         echo "Path: ${artifactPath}"
 	switch(env.BRANCH_NAME){
 		case "develop":
-			nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging]], credentialsId: 'nexus', groupId: pom.groupId, nexusUrl: '$nexus_url', nexusVersion: 'nexus3', protocol: 'http', repository: 'dev', version: pom.version
+			nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging]], credentialsId: 'nexuscreds', groupId: pom.groupId, nexusUrl: '$nexus_url', nexusVersion: 'nexus3', protocol: 'http', repository: 'dev', version: pom.version
 		        sh "ansible-playbook -e env=dev -e artifact=${pom.artifactId} -e packaging=${pom.packaging} deploy.yaml"
 			break
 		case "release":
-			nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging]], credentialsId: 'nexus', groupId: pom.groupId, nexusUrl: '$nexus_url', nexusVersion: 'nexus3', protocol: 'http', repository: 'qa', version: pom.version
+			nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging]], credentialsId: 'nexuscreds', groupId: pom.groupId, nexusUrl: '$nexus_url', nexusVersion: 'nexus3', protocol: 'http', repository: 'qa', version: pom.version
 			sh "ansible-playbook -e env=qa -e artifact=${pom.artifactId} -e packaging=${pom.packaging} deploy.yaml"
 			break
 		case "master":
-			nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging]], credentialsId: 'nexus', groupId: pom.groupId, nexusUrl: '$nexus_url', nexusVersion: 'nexus3', protocol: 'http', repository: 'stage', version: pom.version
+			nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging]], credentialsId: 'nexuscreds', groupId: pom.groupId, nexusUrl: '$nexus_url', nexusVersion: 'nexus3', protocol: 'http', repository: 'uat', version: pom.version
 		        sh "ansible-playbook -e env=stage -e artifact=${pom.artifactId} -e packaging=${pom.packaging} deploy.yaml"
 			break
 		default:
-			nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging]], credentialsId: 'nexus', groupId: pom.groupId, nexusUrl: '$nexus_url', nexusVersion: 'nexus3', protocol: 'http', repository: 'prod', version: pom.version
+			nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging]], credentialsId: 'nexuscreds', groupId: pom.groupId, nexusUrl: '$nexus_url', nexusVersion: 'nexus3', protocol: 'http', repository: 'prod', version: pom.version
 		        sh "ansible-playbook -e env=prod -e artifact=${pom.artifactId} -e packaging=${pom.packaging} deploy.yaml"
 			break
 	}
