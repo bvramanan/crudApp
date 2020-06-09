@@ -47,5 +47,4 @@ node{
 		        sh "ansible-playbook -e env=prod -e artifact=${pom.artifactId} -e packaging=${pom.packaging} deploy.yaml"
 			break
 	}
-    }
 }
